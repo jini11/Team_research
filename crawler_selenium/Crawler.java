@@ -1,0 +1,239 @@
+package crawler_selenium;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+
+//    1. selenium을 다운받은 후, 개발툴(eclipse, vsc 등)에 포함시켜 주기
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+public class Crawler {
+
+	private static final char UTF_8_WITHOUT_BOM = '\ufeff';
+
+	// WebDriver
+	static private WebDriver driver;
+	static private WebElement element;
+	private String url;
+
+	// Properties
+	public static String WEB_DRIVER_ID = "webdriver.chrome.driver";
+	public static String WEB_DRIVER_PATH = "C:/selenium/chromedriver.exe";   //  2. chromedriver를 다운받은 후 큰따옴표 사이의 위치를 바꿔주기
+
+	// 총 리뷰 수
+	static int review_total = 0;
+
+	public static HashMap<String, Object> map = new HashMap<>();
+
+	public static ArrayList<String> id = new ArrayList<>();
+	public static ArrayList<String> time = new ArrayList<>();
+	public static ArrayList<String> score = new ArrayList<>();
+	public static ArrayList<String> picture = new ArrayList<>();
+	public static ArrayList<String> menu = new ArrayList<>();
+	public static ArrayList<String> reviews = new ArrayList<>();
+
+	public Crawler() {
+		// System Property SetUp
+		System.setProperty(WEB_DRIVER_ID, WEB_DRIVER_PATH);
+
+		// Driver SetUp
+		ChromeOptions options = new ChromeOptions();
+		options.setCapability("ignoreProtectedModeSettings", true);
+		driver = new ChromeDriver(options);
+
+		// 음식점마다 url 바꿔주기
+		url = "https://www.yogiyo.co.kr/mobile/#/359890/";  //      3. 요기요에서 본인이 크롤링하고 싶은 음식점 들어가서 주소 복붙하기
+
+	}
+
+	public void open() {
+		try {
+			// get방식으로 url 요청
+			driver.get(url);
+
+			// 클린리뷰 버튼 클릭
+			new WebDriverWait(driver, 20).until(ExpectedConditions.elementToBeClickable(By.xpath("//*[@id=\"content\"]/div[2]/div[1]/ul/li[2]/a"))).click();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 창 닫기
+	public void close(){
+		driver.close();
+	}
+
+	// scroll 내리기
+	public void scroll_down() {
+		JavascriptExecutor js = (JavascriptExecutor) driver;
+		js.executeScript("window.scrollBy(0,3050)", "");
+	}
+
+	// 더보기 버튼 클릭하기
+	public void click_more() throws InterruptedException {
+		element = driver.findElement(By.className("btn-more"));
+		element.click();
+
+		Thread.sleep(2);
+
+	}
+
+	// 데이터 수집
+	public void collect_data() throws IOException {
+
+		List<WebElement> id_element = driver.findElements(By.cssSelector("#review li > div > span.review-id"));
+		List<WebElement> time_element = driver.findElements(By.cssSelector("#review li > div > span.review-time"));
+		List<WebElement> score_element = driver.findElements(By.cssSelector("#review li > div > div > span.total"));
+		List<WebElement> picture_element = driver.findElements(By.cssSelector("#review li"));
+		List<WebElement> menu_element = driver.findElements(By.cssSelector("#review li > div.order-items"));
+		List<WebElement> reviews_element = driver.findElements(By.cssSelector("#review li > p"));
+
+		// 별점 계산하고 별도로 score(Arraylist)에 add
+		for (int i = 0; i < score_element.size(); i++) {
+			int star = 0;
+			String source = ((WebElement) score_element.get(i)).getAttribute("innerHTML");
+			int len = 0;
+
+			if (source.contains("full")) {
+				for (int j = 0; j < source.length(); j++) {
+					len = source.split("full").length;
+
+				}
+				star = len - 1;
+			}
+			score.add(Integer.toString(star));
+		}
+
+		// 사진 유무 판별, picture(ArrayList)에 저장
+		for (int i = 1; i < picture_element.size(); i++) {
+			String source = ((WebElement) picture_element.get(i)).getAttribute("innerHTML");
+
+			if (source.contains("table"))
+				source = "yes";
+			else
+				source = "no";
+
+			picture.add(source);
+			
+		}
+
+		// menu에서 , 기호를 +로 대체(,를 기준으로 셀이 분리되기 때문)
+		for(int i=0;i<menu_element.size();i++){
+			String text = ((WebElement) menu_element.get(i)).getText();
+			
+			if(text.contains(","))
+				text = text.replaceAll(",","+");
+			
+			menu.add(text);
+		}
+
+		// reviews에서 , 기호 제거
+		for(int i=0;i<reviews_element.size();i++){
+			String text = ((WebElement) reviews_element.get(i)).getText();
+
+			if(text.contains(","))
+				text = text.replaceAll(",", "");
+
+			reviews.add(text);
+		}
+
+		// 그 외
+		for (int i = 0; i < id_element.size(); i++) {
+			id.add(id_element.get(i).getText());
+			time.add(time_element.get(i).getText());
+		}
+
+		map.put("ID", id);
+		map.put("TIME", time);
+		map.put("SCORE", score);
+		map.put("PICTURE", picture);
+		map.put("MENU", menu);
+		map.put("REVIEWS", reviews);
+
+		System.out.println("데이터 수집 완료");
+		
+		save_data();
+
+	}
+
+	// 데이터 csv형태로 저장
+	public void save_data() throws IOException {
+
+		// 파일 경로 각자 설정하기
+
+		String filepath = "C://Users//User//OneDrive - 공주대학교//바탕 화면//review//";       //   4. csv 파일 저장할 위치 설정해주기
+		String title = "yogiyo";       //  5. csv 파일 이름 적는 곳(바꿔도 되고 안 바꿔도 됨)
+
+		BufferedWriter fw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(title + ".csv")));
+
+		for (int i = 0; i < id.size(); i++) {
+			fw.write(id.get(i) + ",");
+			fw.write(time.get(i) + ",");
+			fw.write(score.get(i) + ",");
+			fw.write(picture.get(i) + ",");
+			fw.write(menu.get(i) + ",");
+			fw.write(reviews.get(i));
+			fw.newLine();
+		}
+
+		fw.flush();
+
+		fw.close();
+		System.out.println("저장 완료");
+
+		// apche poi를 사용한 파일 저장(작동 안됨..)
+		/*
+		 * File file=new File("yogiyo.xlsx"); FileOutputStream fileout=new
+		 * FileOutputStream(file);
+		 * 
+		 * XSSFWorkbook xworkbook=new XSSFWorkbook();
+		 * 
+		 * XSSFSheet xsheet=xworkbook.createSheet("요기요"); XSSFRow curRow;
+		 * 
+		 * int row=element.size(); Cell cell=null;
+		 * 
+		 * //title curRow=xsheet.createRow(0); cell=curRow.createCell(0);
+		 * cell.setCellValue("요기요 리뷰");
+		 * 
+		 * //head curRow=xsheet.createRow(1); cell=curRow.createCell(0);
+		 * cell.setCellValue("유저ID");
+		 * 
+		 * cell=curRow.createCell(1); cell.setCellValue("시간");
+		 * 
+		 * cell=curRow.createCell(2); cell.setCellValue("신고");
+		 * 
+		 * cell=curRow.createCell(3); cell.setCellValue("별점");
+		 * 
+		 * cell=curRow.createCell(4); cell.setCellValue("리뷰");
+		 * 
+		 * cell=curRow.createCell(5); cell.setCellValue("신고");
+		 * 
+		 * //body for(int i=2;i<row;i++){ curRow=xsheet.createRow(1);
+		 * 
+		 * cell=curRow.createCell(0); cell.setCellValue(element.get(i).getText());
+		 * 
+		 * 
+		 * 
+		 * }
+		 * 
+		 * for(int i=0;i<3;i++){ xsheet.autoSizeColumn(i); xsheet.setColumnWidth(i,
+		 * (xsheet.getColumnWidth(i))+256); }
+		 */
+	}
+}
