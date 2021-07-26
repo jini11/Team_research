@@ -7,7 +7,11 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -37,6 +41,8 @@ public class Crawler {
 
 	// 총 리뷰 수
 	static int review_total = 0;
+	//음식점 넘버
+	static int number = 359891;
 
 	public static HashMap<String, Object> map = new HashMap<>();
 
@@ -57,7 +63,7 @@ public class Crawler {
 		driver = new ChromeDriver(options);
 
 		// 음식점마다 url 바꿔주기
-		url = "https://www.yogiyo.co.kr/mobile/#/359890/";  //      3. 요기요에서 본인이 크롤링하고 싶은 음식점 들어가서 주소 복붙하기
+		url = "https://www.yogiyo.co.kr/mobile/#/"+(number++)+"/";  //      3. 요기요에서 본인이 크롤링하고 싶은 음식점 들어가서 주소 복붙하기
 
 	}
 
@@ -66,12 +72,25 @@ public class Crawler {
 			// get방식으로 url 요청
 			driver.get(url);
 
+			// 홈페이지가 잘 열렸는지 확인
+			check_open();
+			
 			// 클린리뷰 버튼 클릭
 			new WebDriverWait(driver, 20).until(ExpectedConditions.elementToBeClickable(By.xpath("//*[@id=\"content\"]/div[2]/div[1]/ul/li[2]/a"))).click();
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	// 홈페이지 잘 열렸는지 확인
+	public boolean check_open(){
+		if(driver.getCurrentUrl().equals("https://www.yogiyo.co.kr/mobile/#/")){
+			number++;
+			return false;
+		}
+		else
+			return true;
 	}
 
 	// 창 닫기
@@ -82,7 +101,7 @@ public class Crawler {
 	// scroll 내리기
 	public void scroll_down() {
 		JavascriptExecutor js = (JavascriptExecutor) driver;
-		js.executeScript("window.scrollBy(0,3050)", "");
+		js.executeScript("window.scrollTo(0, document.body.scrollHeight);");
 	}
 
 	// 더보기 버튼 클릭하기
@@ -94,6 +113,13 @@ public class Crawler {
 
 	}
 
+	// 총 리뷰 개수 불러오기
+	public int get_reviewnum() {
+		element = driver.findElement(By.xpath("//*[@id=\"content\"]/div[2]/div[1]/ul/li[2]/a/span"));
+
+		return Integer.parseInt(element.getText());
+	}
+
 	// 데이터 수집
 	public void collect_data() throws IOException {
 
@@ -103,6 +129,55 @@ public class Crawler {
 		List<WebElement> picture_element = driver.findElements(By.cssSelector("#review li"));
 		List<WebElement> menu_element = driver.findElements(By.cssSelector("#review li > div.order-items"));
 		List<WebElement> reviews_element = driver.findElements(By.cssSelector("#review li > p"));
+
+		//id
+		for(int i=0;i<id_element.size();i++){
+			String text = ((WebElement) id_element.get(i)).getText();
+
+			if(text.contains("손님"))
+				text = text.replaceAll("손님", "");
+			else if(text.contains("님"))
+				text = text.replaceAll("님", "");
+
+			id.add(text);
+		}
+
+		//time
+		for(int i=0;i<time_element.size();i++){
+			String text = ((WebElement) time_element.get(i)).getText();
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(new Date());
+			DateFormat df = new SimpleDateFormat("yyyy년 MM월 dd일");
+
+			if(text.contains("전")){
+				if(text.contains("일")){
+					if(text.contains("일주일")){
+						cal.add(Calendar.DATE,-7);
+						text = df.format(cal.getTime());
+					}
+					else {
+						cal.add(Calendar.DATE,-Integer.parseInt(text.split("일")[0]));
+						text = df.format(cal.getTime());
+					}
+				}
+				else {
+					text = df.format(cal.getTime());
+				}
+			}
+			else if(text.contains("어제")){
+				cal.add(Calendar.DATE,-1);
+				text = df.format(cal.getTime());
+			}
+
+			time.add(text);
+		}
+		//시간 전처리
+		//ex) 23시간 전, 2일 전, 일주일 전
+		// "전" 들어간 text 가져와서 
+		// 1. "일"이 포함되어 있으면 오늘 날짜-2 
+		// 2. 1에서 "일주일"이 포함되어 있으면 오늘날짜-7일
+		// 3. "시간"이 포함되어 있으면 오늘 날짜로 replaceAll
+		// ++ "어제"
 
 		// 별점 계산하고 별도로 score(Arraylist)에 add
 		for (int i = 0; i < score_element.size(); i++) {
@@ -153,12 +228,7 @@ public class Crawler {
 			reviews.add(text);
 		}
 
-		// 그 외
-		for (int i = 0; i < id_element.size(); i++) {
-			id.add(id_element.get(i).getText());
-			time.add(time_element.get(i).getText());
-		}
-
+				
 		map.put("ID", id);
 		map.put("TIME", time);
 		map.put("SCORE", score);
@@ -180,7 +250,7 @@ public class Crawler {
 		String filepath = "C://Users//User//OneDrive - 공주대학교//바탕 화면//review//";       //   4. csv 파일 저장할 위치 설정해주기
 		String title = "yogiyo";       //  5. csv 파일 이름 적는 곳(바꿔도 되고 안 바꿔도 됨)
 
-		BufferedWriter fw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(title + ".csv")));
+		BufferedWriter fw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filepath+title + ".csv")));
 
 		for (int i = 0; i < id.size(); i++) {
 			fw.write(id.get(i) + ",");
