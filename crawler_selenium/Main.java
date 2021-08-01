@@ -3,7 +3,7 @@ package crawler_selenium;
 public class Main {
     static int review_total=0; //초기화
 	static int count=0; //실제 크롤링한 음식점 개수
-	static int store=4; //크롤링할 음식점 개수
+	static int store=2; //크롤링할 음식점 개수
 	static int review_sum=0;
     public static void main(String[] args) throws Exception {
 		

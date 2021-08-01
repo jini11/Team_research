@@ -42,8 +42,8 @@ public class Crawler {
 	// 총 리뷰 수
 	static int review_total = 0;
 	//음식점 넘버
-	static int number = 359891;
-
+	static int number = 279652;
+	//230730, 289809, 245326, 485145, 406759, 396589, 522576, 249966, 513830, 508349, 246868, 486637, 279652
 	public static HashMap<String, Object> map = new HashMap<>();
 
 	public static ArrayList<String> id = new ArrayList<>();
@@ -219,7 +219,7 @@ public class Crawler {
 		}
 
 		// reviews에서 , 기호 제거
-		for(int i=0;i<reviews_element.size();i++){
+		for(int i=1;i<reviews_element.size();i++){
 			String text = ((WebElement) reviews_element.get(i)).getText();
 
 			if(text.contains(","))
@@ -248,24 +248,25 @@ public class Crawler {
 		// 파일 경로 각자 설정하기
 
 		String filepath = "C://Users//User//OneDrive - 공주대학교//바탕 화면//review//";       //   4. csv 파일 저장할 위치 설정해주기
-		String title = "yogiyo";       //  5. csv 파일 이름 적는 곳(바꿔도 되고 안 바꿔도 됨)
+		String title = "yogiyo_review";       //  5. csv 파일 이름 적는 곳(바꿔도 되고 안 바꿔도 됨)
 
-		BufferedWriter fw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filepath+title + ".csv")));
+		BufferedWriter fw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filepath+title + ".csv",true)));
+		// BufferedWriter로 이용해 파일 생성
 
 		for (int i = 0; i < id.size(); i++) {
-			fw.write(id.get(i) + ",");
+			fw.write(id.get(i) + ",");              //arraylist(id)에서 get으로 값을 가져와 write 메소드를 이용해 값을 파일에 입력, ","로 셀 분리
 			fw.write(time.get(i) + ",");
 			fw.write(score.get(i) + ",");
 			fw.write(picture.get(i) + ",");
 			fw.write(menu.get(i) + ",");
 			fw.write(reviews.get(i));
-			fw.newLine();
+			fw.newLine();  //엔터
 		}
 
-		fw.flush();
+		fw.flush();   //출력 버퍼 비우기
 
-		fw.close();
-		System.out.println("저장 완료");
+ 		fw.close();		//닫기
+ 		System.out.println("저장 완료");
 
 		// apche poi를 사용한 파일 저장(작동 안됨..)
 		/*
