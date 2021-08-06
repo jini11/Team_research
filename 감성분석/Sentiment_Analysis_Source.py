@@ -2,7 +2,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 import pandas as pd
 import numpy as np
 
-courpus = [
+corpus = [
     '푸짐하게 잘 먹었습니다.'
     '콩국수 꼽빼기 2개는 양도 맛도 별로임 꽁국수 메뉴추가는 패착인듯'
     '김밥이 맛있습니다요'
@@ -10,7 +10,7 @@ courpus = [
 
 vect = CountVectorizer();
 
-document_term_matrix = vect.fit_transform(courpus)
+document_term_matrix = vect.fit_transform(corpus)
 
 tf = pd.DataFrame(document_term_matrix.toarray(), colums = vect.get_feature_names())
 
