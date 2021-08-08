@@ -15,7 +15,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from hanspell import spell_checker
 
-stopwords = ['의', '가', '이', '은', '들', '는', '좀', '잘', '걍', '과', '도', '를', '으로', '자', '에', '와', '한', '하다', '요', '.', ',']
+stopwords = ['의', '가', '이', '은', '들', '는', '좀', '잘', '걍', '과', '도', '를', '으로', '자', '에', '와', '한', '하다', '요']
 
 dataset = pd.read_csv('C:/Users/User/OneDrive - 공주대학교/바탕 화면/review/dataset.csv')
 
@@ -41,11 +41,6 @@ for sentence in dataset[:1000]['리뷰']:
 #dataset = dataset.dropna(how='any') # Null 값 제거
 print('전처리  완료')
 
-X = checked
-Y = dataset[:1000]['긍/부정']
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3, random_state=0, shuffle= False)
-test_review = X_test
-test_score = Y_test
 
 #토큰화
 okt = Okt()
@@ -70,55 +65,32 @@ print(word_count)
 #x_test = X_data[6694:]
 #y_test = dataset.loc[6694:'긍/부정'].values
 
+for i in range(50):
+    print("리뷰: ",checked," tfidf: ",tdm)
+
 X = tdm
 Y = dataset[:1000]['긍/부정']
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3, random_state=0, shuffle= False)
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3, random_state=0)
 
 
 tfidf = TfidfVectorizer(lowercase=False, tokenizer=tokenize)
 lr_tfidf = Pipeline([('vect', tfidf),('clf', LogisticRegression(C=10.0, penalty='l2', random_state=0))])
 lr = LogisticRegression()
 print('start')
-
-#lr_tfidf.fit(X_train, Y_train)
+#lr_tfidf.fit(Y_train)
 lr.fit(X_train,Y_train)
 
-#y_pred1 = lr_tfidf.predict(X_test)
-#print('정확도1: %.3f' %accuracy_score(Y_test,y_pred1))
-
+#y_pred = lr_tfidf.predict(X_test)
 y_pred = lr.predict(X_test)
+
+print(Y_test)
+print(y_pred)
+
 print('정확도: %.3f' %accuracy_score(Y_test,y_pred))
-
-pred_label = []
-origin_label = []
-pred_label = np.argmax(y_pred, axis=0)
-origin_label = np.argmax(Y_test, axis=0)
-
-
-n=0
-#for i in test_review:
-   # print("리뷰: ",test_review,"\t원래 라벨: ", Y_test,"예측 라벨: ",pred_label)
-  #  n=n+1
-
-#for review, origin, pred in zip(test_review, origin_label,pred_label):
-    #print("리뷰: ", review, " 원래 레이블: ",origin," 예측 레이블: ",pred)
-  
-for review in test_review:
-    print("리뷰: ",review)
-
-for origin in Y_test:
-    print("원래 스코어: ",origin)
-
-for pred in y_pred:
-    print("예상 레이블: ",pred)
-
 #리뷰만 따로 불러와서 형태소 추출, tf-idf 적용
 #tf-idf와 레이블을 같은 리스트에 넣고 train_test_split 해서 로지스틱에 넣고 학습
 
 
+
 #1 내 방식대로 형태소 추출 "사이킷런 tf-idf 검색"
-#2 result_full 가져와서 명, 동, 형만 추출해서 
-
-
-
-# %%
+#2 result_full 가져와서 명, 동, 형만 추출
