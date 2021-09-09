@@ -7,4 +7,4 @@ crawler_selenium 완성
 
 Hello world
 
-나는 20학번의 희망의다
+20 강채련
