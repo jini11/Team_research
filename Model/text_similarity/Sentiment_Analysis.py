@@ -33,7 +33,7 @@ class Sentiment_Analysis:
         self.data_x = self.data_x.values.astype('U')
         data_okt = self.vectorize(self.data_x)
         self.train_model(data_okt)
-        self.get_score()
+        #self.get_score()
 
     def load_data(self):
         df = pd.read_csv("C:/Users/User/OneDrive - 공주대학교/바탕 화면/review/lastlast.csv", encoding='cp949')
@@ -63,8 +63,8 @@ class Sentiment_Analysis:
         print('최상 점수')
         print(self.rsv_okt.best_score_)
 
-        print('최상 매개변수 값')
-        print(self.rsv_okt.best_params_)
+        #print('최상 매개변수 값')
+        #print(self.rsv_okt.best_params_)
 
     def start_test(self, test_review):
         self.review = [test_review]
