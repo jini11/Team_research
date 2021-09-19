@@ -4,8 +4,10 @@ from pandas import DataFrame
 
 class pscCounter:
     def counter(review_text):
+        
+        komoran = Komoran()
 
-        nlpData = Komoran.pos(review_text)
+        nlpData = komoran.pos(review_text)
 
         rawData = pd.DataFrame(nlpData)
 
