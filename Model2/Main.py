@@ -1,5 +1,4 @@
 from typing import final
-from Text_Similarity import Text_Similarity
 from Sentiment_Analysis import Sentiment_Analysis
 from Preprocess import Preporcess
 from Part_of_Speech import pscCounter
@@ -11,7 +10,7 @@ class Main():
         speech = pscCounter()
 
         preprocess = Preporcess()
-        similarity = Text_Similarity()
+        
         print("어뷰징 리뷰를 판별하는 프로그램입니다.(종료시 0 입력)")
         while(1):
             review = input('리뷰를 입력하세요: ')
